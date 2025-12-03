@@ -1,13 +1,10 @@
 {
-  "name": "ai-diet-assistant",
+  "name": "ai-diet-assistant-vercel",
   "version": "1.0.0",
-  "description": "AI-powered diet and macro assistant.",
-  "type": "module",  <-- 必须有这一行
+  "description": "Vercel Serverless Function for AI Diet Assistant",
   "main": "api/ai.js",
-  "dependencies": {
-    "@google/generative-ai": "^0.15.0"
-  },
   "scripts": {
-    "start": "node api/ai.js"
-  }
+    "start": "vercel dev"
+  },
+  "dependencies": {}
 }
