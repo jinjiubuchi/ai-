@@ -1,0 +1,12 @@
+{
+  "name": "ai-diet-assistant",
+  "version": "1.0.0",
+  "description": "AI-powered diet and macro assistant.",
+  "main": "api/ai.js",
+  "dependencies": {
+    "@google/generative-ai": "^0.15.0"
+  },
+  "scripts": {
+    "start": "node api/ai.js"
+  }
+}
