@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>减脂目标助手 | 科学瘦身 (AI集成版)</title>
     <style>
-        /* CSS 样式与减脂主题版保持一致 */
+        /* CSS 样式 - 减脂主题 */
         :root {
             --primary: #27ae60;
             --primary-dark: #1e8449;
@@ -234,7 +234,15 @@
             body: JSON.stringify({ prompt: contextPrompt })
         })
         .then(response => {
-            if (!response.ok) throw new Error(`HTTP Error: ${response.status} - 确保 Vercel 环境变量已配置!`);
+            // 如果 HTTP 状态码不是 2xx (如 404, 500)，抛出错误
+            if (!response.ok) {
+                 return response.json().then(err => {
+                    throw new Error(`HTTP Error: ${response.status} - ${err.error || 'Server Error'}`);
+                 }).catch(() => {
+                    // 如果无法解析 JSON (如 404/405), 使用状态码
+                    throw new Error(`HTTP Error: ${response.status}. Please check Vercel Logs for api/ai.`);
+                 });
+            }
             return response.json();
         })
         .then(data => {
@@ -243,11 +251,18 @@
         })
         .catch(error => {
             console.error(error);
-            responseDiv.innerHTML = `⚠️ AI 服务连接失败。请检查 Vercel 部署和环境变量。错误信息：${error.message}`;
+            // 增强的错误报告
+            responseDiv.innerHTML = `
+                ⚠️ AI 服务连接失败。错误信息：${error.message}<br>
+                ---
+                **诊断提示：**
+                1. **404/405 错误:** 检查 GitHub 仓库中 **api/ai.js** 路径是否正确。
+                2. **500 错误 (Internal Server Error):** 请在 Vercel 中检查 **GEMINI_API_KEY** 环境变量是否配置正确。
+            `;
         });
     }
 
-    // [其余的 JS 函数 (animateValue, showResults, generateMealPlan, switchTab) 保持不变]
+    // [其余的 JS 辅助函数]
 
     function animateValue(id, start, end, duration) {
         const obj = document.getElementById(id);
