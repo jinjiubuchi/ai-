@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>减脂目标助手 | 科学瘦身 (AI集成版)</title>
+    <style>
+        /* CSS 样式与减脂主题版保持一致 */
+        :root {
+            --primary: #27ae60;
+            --primary-dark: #1e8449;
+            --accent: #FF9800;
+            --bg: #F0F4F8;
+            --card-bg: #FFFFFF;
+            --text-main: #2c3e50;
+            --text-sub: #7f8c8d;
+            --shadow: 0 10px 20px rgba(0,0,0,0.08);
+            --radius: 16px;
+        }
+
+        body { font-family: 'PingFang SC', 'Microsoft Yahei', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1, h2, h3 { margin: 0; font-weight: 600; }
+        .card { background: var(--card-bg); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); margin-bottom: 30px; transition: transform 0.3s ease; }
+        .card:hover { transform: translateY(-5px); }
+
+        /* 计算器样式 */
+        .calc-header { text-align: center; margin-bottom: 25px; }
+        .calc-header h2 { color: var(--primary); margin-bottom: 8px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .gender-group { grid-column: span 2; display: flex; gap: 15px; justify-content: center; }
+        .radio-label { flex: 1; text-align: center; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; cursor: pointer; transition: all 0.3s; font-weight: bold; color: var(--text-sub); }
+        .radio-label input { display: none; }
+        .radio-label:has(input:checked) { border-color: var(--primary); background-color: #e8f5e9; color: var(--primary); }
+        .styled-input, .styled-select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1em; background: #fafafa; outline: none; transition: border 0.3s; }
+        .full-width { grid-column: span 2; }
+        .btn-calc { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 30px; font-size: 1.1em; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4); transition: transform 0.2s, box-shadow 0.2s; }
+        .btn-calc:active { transform: scale(0.98); }
+
+        /* 结果展示样式 */
+        .result-section { display: none; text-align: center; animation: fadeIn 0.8s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .calories-display { background: var(--primary); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .big-number { font-size: 2.5em; font-weight: 800; line-height: 1.2; }
+        .nutrients-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .prot-color { color: #3498db; }
+        .fat-color { color: #f1c40f; }
+        .carb-color { color: #e67e22; }
+
+        /* 推荐列表样式 */
+        .recommendation-grid { margin-top: 15px; display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .rec-item { background: #f9f9f9; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .rec-item strong { font-size: 1.1em; color: var(--primary-dark); }
+        .rec-item span { font-weight: 600; color: var(--text-main); }
+
+        /* AI 聊天界面样式 */
+        .ai-chat-box { background: #ecf0f1; border-radius: 10px; padding: 15px; margin-top: 15px; }
+        .ai-input-group { display: flex; gap: 10px; margin-top: 10px; }
+        .ai-input { flex-grow: 1; padding: 10px; border: 1px solid #bdc3c7; border-radius: 5px; resize: none; height: 40px; }
+        .btn-ai-send { padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background 0.2s; }
+        .btn-ai-send:hover { background: #2980b9; }
+
+        #aiResponse { background: var(--card-bg); padding: 12px; border-radius: 5px; border-left: 3px solid #3498db; color: var(--text-main); min-height: 40px; font-size: 0.9em; white-space: pre-wrap; }
+
+        /* 食物分类导航样式 */
+        .nav-wrapper { overflow-x: auto; white-space: nowrap; padding-bottom: 10px; scrollbar-width: none; }
+        .food-tabs { display: inline-flex; gap: 10px; }
+        .tab-btn { flex-shrink: 0; padding: 10px 20px; background: transparent; border: 2px solid #e0e0e0; border-radius: 25px; color: var(--text-sub); cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .tab-btn.active, .tab-btn:hover { border-color: var(--primary); background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3); }
+        .guide-card { border-left: 5px solid var(--primary); }
+        .guide-card h4 { color: var(--primary-dark); }
+        .guide-card .tip { color: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <section class="card">
+        <div class="calc-header">
+            <h2>🔥 减脂目标计算器</h2>
+            <p>科学设定热量赤字，迈出瘦身第一步</p>
+        </div>
+
+        <form id="calcForm" onsubmit="event.preventDefault(); showResults();">
+            <div class="form-grid">
+                <div class="gender-group">
+                    <label class="radio-label"><input type="radio" name="gender" value="male" id="genderMale" checked><span>👨 男士</span></label>
+                    <label class="radio-label"><input type="radio" name="gender" value="female" id="genderFemale"><span>👩 女士</span></label>
+                </div>
+                <div class="input-group"><label>年龄 (岁)</label><input type="number" class="styled-input" id="ageInput" placeholder="25" required min="10"></div>
+                <div class="input-group"><label>体重 (kg)</label><input type="number" class="styled-input" id="weightInput" placeholder="70" required min="30"></div>
+                <div class="input-group full-width"><label>身高 (cm)</label><input type="number" class="styled-input" id="heightInput" placeholder="170" required min="100"></div>
+                <div class="input-group full-width">
+                    <label>日常活动强度</label>
+                    <select class="styled-select" id="activitySelect">
+                        <option value="1.2">🛋️ 久坐不动 (办公室)</option>
+                        <option value="1.375">🚶‍♂️ 轻度活动 (每周运动1-3次)</option>
+                        <option value="1.55">🏃‍♂️ 中度活动 (每周运动3-5次)</option>
+                        <option value="1.725">🏋️‍♂️ 高强度活动 (每天运动)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-calc" type="submit">计算减脂目标 / START DIET</button>
+        </form>
+    </section>
+
+    <section id="resultCard" class="card result-section">
+        <h3>🎯 您的每日减脂目标</h3>
+        <p style="color:#666; font-size:0.9em; margin-bottom:15px;">通过 **热量赤字 500 kcal** 达到的目标摄入：</p>
+        
+        <div class="calories-display">
+            <span class="big-number" id="tdeeResult">0</span> kcal
+            <div style="font-size:0.8em; opacity:0.8;">每日目标热量摄入</div>
+        </div>
+        <div class="nutrients-grid">
+            <div class="nutrient-box"><span class="nutrient-val prot-color" id="proteinResult">0g</span><span class="nutrient-lbl">蛋白质 (增肌保肌)</span></div>
+            <div class="nutrient-box"><span class="nutrient-val fat-color" id="fatResult">0g</span><span class="nutrient-lbl">脂肪 (必需摄入)</span></div>
+            <div class="nutrient-box"><span class="nutrient-val carb-color" id="carbResult">0g</span><span class="nutrient-lbl">碳水 (提供能量)</span></div>
+        </div>
+    </section>
+    
+    <section id="recommendationCard" class="card result-section" style="display: none;">
+        <h3>🍽️ 低卡高蛋白食物搭配示例</h3>
+        <p style="color:#666; font-size:0.9em; margin-bottom:15px;">以下搭配示例可大致满足您的每日宏量营养素需求：</p>
+        <div id="mealPlanOutput" class="recommendation-grid"></div>
+    </section>
+
+    <section id="aiCard" class="card">
+        <h3>🤖 AI 智能饮食顾问（进阶）</h3>
+        <p style="color:#666; font-size:0.9em; margin-bottom:15px;">输入您的问题，获取基于AI的个性化食谱建议。</p>
+        
+        <div class="ai-chat-box">
+            <div id="aiResponse">
+                AI 正在等待您计算完营养目标后提问... 例如: "如何用鸡胸肉做低卡午餐?"
+            </div>
+            
+            <div class="ai-input-group">
+                <textarea id="aiQueryInput" class="ai-input" placeholder="输入您的问题..."></textarea>
+                <button class="btn-ai-send" onclick="handleAIChat()">发送</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h3 style="margin-bottom: 15px;">📖 减脂期食物选择指南</h3>
+        
+        <div class="nav-wrapper">
+            <div class="food-tabs">
+                <button class="tab-btn active" onclick="switchTab(this, 'all')">减脂核心</button>
+                <button class="tab-btn" onclick="switchTab(this, 'grain')">🌾 碳水选择</button>
+                <button class="tab-btn" onclick="switchTab(this, 'vege')">🍏 蔬果纤维</button>
+                <button class="tab-btn" onclick="switchTab(this, 'meat')">🥩 蛋白质源</button>
+                <button class="tab-btn" onclick="switchTab(this, 'soy')">🥛 饮品与零食</button>
+            </div>
+        </div>
+        <div id="foodContent" class="food-content-detail">
+             <div class="guide-card">
+                <h4>🎉 减脂成功的核心要素</h4>
+                <p>请先完成上方计算，获取个性化建议。</p>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    // =========================================================
+    // 减脂主题常量与数据库
+    // =========================================================
+    const CALORIE_DEFICIT = 500;
+    const MACRO_SPLIT = { P: 0.35, F: 0.20, C: 0.45 }; 
+    const FOOD_DATABASE = [
+        { name: "鸡胸肉 (去皮)", type: "protein", P: 24, F: 1.2, C: 0, Kcal: 133 },
+        { name: "希腊酸奶 (原味)", type: "protein", P: 10, F: 0.5, C: 5, Kcal: 60 },
+        { name: "罗非鱼/巴沙鱼", type: "protein", P: 20, F: 1.5, C: 0, Kcal: 96 },
+        { name: "燕麦片 (低GI)", type: "carb", P: 15, F: 6.7, C: 66.9, Kcal: 389 },
+        { name: "糙米/藜麦", type: "carb", P: 7.6, F: 2.5, C: 73.7, Kcal: 368 },
+        { name: "玉米/土豆 (蒸煮)", type: "carb", P: 1.5, F: 0.2, C: 25, Kcal: 100 },
+        { name: "牛油果", type: "fat", P: 2, F: 15, C: 9, Kcal: 160 },
+        { name: "奇亚籽", type: "fat", P: 17, F: 31, C: 42, Kcal: 486 },
+        { name: "西兰花", type: "vegetable", P: 2.8, F: 0.4, C: 6.6, Kcal: 33 },
+        { name: "菠菜", type: "vegetable", P: 2.6, F: 0.3, C: 3.2, Kcal: 23 },
+    ];
+
+    // 获取当前计算结果 (用于AI上下文)
+    function getCalculatedData() {
+        return {
+            tdee: parseFloat(document.getElementById('tdeeResult').innerText.replace(',', '')) || 0,
+            protein: parseFloat(document.getElementById('proteinResult').innerText.replace('g', '')) || 0,
+            fat: parseFloat(document.getElementById('fatResult').innerText.replace('g', '')) || 0,
+            carb: parseFloat(document.getElementById('carbResult').innerText.replace('g', '')) || 0,
+        };
+    }
+
+    // =========================================================
+    // 核心 AI 接口调用 (指向 Vercel Serverless Function)
+    // =========================================================
+
+    function handleAIChat() {
+        const queryInput = document.getElementById('aiQueryInput');
+        const responseDiv = document.getElementById('aiResponse');
+        const query = queryInput.value.trim();
+        const calculatedData = getCalculatedData();
+
+        if (calculatedData.tdee === 0) {
+            responseDiv.innerHTML = "请先进行**减脂目标计算**，AI才能为您提供个性化建议。";
+            return;
+        }
+        if (!query) {
+            responseDiv.innerHTML = "请输入您的问题。";
+            return;
+        }
+
+        responseDiv.innerHTML = '正在调用 AI 思考中... 请稍候 ⏳';
+        queryInput.value = ''; // 清空输入框
+        
+        // 1. 组合上下文信息
+        const contextPrompt = `
+            用户正在进行减脂。
+            每日目标摄入热量: ${calculatedData.tdee} kcal。
+            目标宏量营养素: 蛋白质 ${calculatedData.protein.toFixed(0)}g, 脂肪 ${calculatedData.fat.toFixed(0)}g, 碳水 ${calculatedData.carb.toFixed(0)}g。
+            食物库中的低卡食物包括: 鸡胸肉, 糙米, 西兰花等。
+            用户提问: ${query}
+            请用中文简洁地回答，给出专业的减脂建议或食谱。
+        `;
+
+        // 2. 调用 Serverless Function (Vercel)
+        const YOUR_BACKEND_ENDPOINT = "/api/ai"; // Vercel 默认路径
+
+        fetch(YOUR_BACKEND_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: contextPrompt })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status} - 确保 Vercel 环境变量已配置!`);
+            return response.json();
+        })
+        .then(data => {
+            // 假设 Serverless Function 返回 { text: "AI的回答" }
+            responseDiv.innerHTML = data.text || "AI未返回有效内容。";
+        })
+        .catch(error => {
+            console.error(error);
+            responseDiv.innerHTML = `⚠️ AI 服务连接失败。请检查 Vercel 部署和环境变量。错误信息：${error.message}`;
+        });
+    }
+
+    // [其余的 JS 函数 (animateValue, showResults, generateMealPlan, switchTab) 保持不变]
+
+    function animateValue(id, start, end, duration) {
+        const obj = document.getElementById(id);
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            let currentValue;
+            if (id.includes('Result')) { 
+                currentValue = (progress * (end - start) + start).toFixed(1);
+            } else {
+                currentValue = Math.floor(progress * (end - start) + start);
+            }
+            obj.innerText = currentValue.toLocaleString() + (id.includes('Result') && id !== 'tdeeResult' ? 'g' : '');
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                 if (!id.includes('Result')) {
+                    obj.innerText = Math.round(end).toLocaleString();
+                 } else {
+                    obj.innerText = end.toFixed(1) + 'g';
+                 }
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+    
+    function showResults() {
+        const age = parseFloat(document.getElementById('ageInput').value);
+        const weight = parseFloat(document.getElementById('weightInput').value);
+        const height = parseFloat(document.getElementById('heightInput').value);
+        const activityFactor = parseFloat(document.getElementById('activitySelect').value);
+        const genderMale = document.getElementById('genderMale').checked;
+        
+        if (isNaN(age) || isNaN(weight) || isNaN(height) || age < 10 || weight < 30 || height < 100) {
+            alert("请填写有效的年龄、体重和身高信息！");
+            return;
+        }
+
+        let BMR;
+        if (genderMale) {
+            BMR = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+        } else {
+            BMR = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+        }
+        
+        const TDEE = BMR * activityFactor;
+        const TARGET_CALORIES = TDEE - CALORIE_DEFICIT;
+
+        const proteinCal = TARGET_CALORIES * MACRO_SPLIT.P;
+        const proteinGrams = proteinCal / 4;
+        const fatCal = TARGET_CALORIES * MACRO_SPLIT.F;
+        const fatGrams = fatCal / 9;
+        const carbCal = TARGET_CALORIES * MACRO_SPLIT.C;
+        const carbGrams = carbCal / 4;
+
+        const resultCard = document.getElementById('resultCard');
+        const recommendationCard = document.getElementById('recommendationCard');
+        resultCard.style.display = 'block';
+        recommendationCard.style.display = 'block';
+        resultCard.scrollIntoView({ behavior: 'smooth' });
+
+        animateValue('tdeeResult', 0, TARGET_CALORIES, 1500);
+        animateValue('proteinResult', 0, proteinGrams, 1500);
+        animateValue('fatResult', 0, fatGrams, 1500);
+        animateValue('carbResult', 0, carbGrams, 1500);
+        
+        generateMealPlan({ P: proteinGrams, F: fatGrams, C: carbGrams });
+    }
+
+    function generateMealPlan(targets) {
+        const outputDiv = document.getElementById('mealPlanOutput');
+        outputDiv.innerHTML = '';
+        let planHtml = '';
+
+        const leanProtein = FOOD_DATABASE.find(f => f.name.includes("鸡胸肉"));
+        const targetProteinGrams = targets.P * 0.6;
+        const chickenServingGrams = (targetProteinGrams / leanProtein.P) * 100;
+
+        planHtml += `<div class="rec-item"><strong>🥩 核心蛋白质</strong><span>${leanProtein.name}</span><span>约 ${Math.round(chickenServingGrams)}g</span></div>`;
+        
+        const wholeGrain = FOOD_DATABASE.find(f => f.name.includes("糙米"));
+        const targetCarbGrams = targets.C * 0.4;
+        const riceServingGrams = (targetCarbGrams / wholeGrain.C) * 100;
+        
+        planHtml += `<div class="rec-item"><strong>🍚 核心碳水</strong><span>${wholeGrain.name}</span><span>约 ${Math.round(riceServingGrams)}g (生重)</span></div>`;
+        
+        const healthyFat = FOOD_DATABASE.find(f => f.name.includes("奇亚籽"));
+        const targetFatGrams = targets.F * 0.15;
+        const seedServingGrams = (targetFatGrams / healthyFat.F) * 100;
+
+        planHtml += `<div class="rec-item"><strong>🥑 健康脂肪</strong><span>${healthyFat.name}</span><span>约 ${Math.round(seedServingGrams)}g</span></div>`;
+
+        planHtml += `<div class="rec-item"><strong>🥦 纤维与饱腹感</strong><span>${FOOD_DATABASE.find(f => f.type === "vegetable").name}</span><span>每天 500g 以上</span></div>`;
+        planHtml += `<div class="rec-item"><strong>💧 水分摄入</strong><span>纯净水/黑咖啡</span><span>保持每天 2500ml+</span></div>`;
+        
+        outputDiv.innerHTML = planHtml;
+    }
+
+    function switchTab(btn, category) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const content = document.getElementById('foodContent');
+        const textMap = {
+            'all': `<div class="guide-card"><h4>🔥 减脂成功的核心要素</h4><ul><li>**热量赤字：** 摄入 < 消耗，是瘦身的唯一途径。</li><li>**高蛋白：** 保护肌肉，增加饱腹感。</li><li>**复合碳水：** 选择低GI食物，保持血糖稳定。</li><li>**足量饮水：** 有助代谢和排毒。</li></ul><p class="tip">🚨 **严禁：** 任何形式的饥饿节食！</p></div>`,
+            'grain': `<div class="guide-card"><h4>🌾 碳水选择：低GI，高纤维</h4><ul><li>**推荐：** 糙米、藜麦、燕麦片、全麦面包。</li><li>**主食份量：** 严格按照计算器给出的碳水目标来控制总份量。</li><li>**避免：** 精制白米饭、白面条、甜点、含糖饮料。</li></ul><p class="tip">🚨 碳水并非敌人，但必须控制总摄入量和来源。</p></div>`,
+            'vege': `<div class="guide-card"><h4>🍏 蔬果纤维：提高饱腹感</h4><ul><li>**蔬菜目标：** 每天 500g 以上，多吃绿叶菜和十字花科蔬菜。</li><li>**水果：** 放在餐间作为加餐，选择低糖分水果（如莓果、番茄）。</li><li>**优势：** 蔬菜卡路里密度极低，可以大量食用增加饱腹感。</li></ul><p class="tip">🚨 果汁、果干和薯条等加工蔬菜，应完全禁止。</p></div>`,
+            'meat': `<div class="guide-card"><h4>🥩 蛋白质源：保护肌肉不流失</h4><ul><li>**首选：** 鸡胸肉、鱼虾、鸡蛋清、瘦牛肉。</li><li>**烹饪方式：** 蒸、煮、烤（避免油炸和大量用油）。</li><li>**摄入重要性：** 蛋白质是减脂期最关键的营养素，必须达标。</li></ul><p class="tip">🚨 肥肉、带皮禽肉、加工肉制品（香肠）应避免。</p></div>`,
+            'soy': `<div class="guide-card"><h4>🥛 饮品与零食：隐形热量杀手</h4><ul><li>**饮品：** 白水、黑咖啡、无糖茶是最佳选择。</li><li>**零食：** 少量原味坚果（不超过一小把）、希腊酸奶（原味）。</li><li>**避免：** 奶茶、碳酸饮料、高糖分果汁、饼干、糕点。</li></ul><p class="tip">🚨 液体卡路里最容易被忽略，远离所有含糖饮料。</p></div>`
+        };
+        
+        content.innerHTML = textMap[category];
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const defaultTabButton = document.querySelector('.food-tabs .tab-btn.active');
+        if (defaultTabButton) {
+            defaultTabButton.click();
+        }
+    });
+</script>
+
+</body>
+</html>
