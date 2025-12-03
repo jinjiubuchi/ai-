@@ -1,6 +1,7 @@
 // 文件路径: api/ai.js
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// 切换到 CommonJS 语法: 使用 require 导入模块
+const { GoogleGenerativeAI } = require('@google/generative-ai'); 
 
 // 获取 Vercel 环境变量中配置的 API Key
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -14,10 +15,8 @@ const model = "gemini-2.5-flash"; // 选用快速的模型
 
 /**
  * Vercel Serverless Function 主函数
- * @param {object} req - 请求对象
- * @param {object} res - 响应对象
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
     // 允许跨域访问，防止前端被 CORS 策略阻挡
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -40,6 +39,7 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Vercel 默认会自动解析 JSON 请求体
         const { prompt } = req.body;
         
         if (!prompt) {
@@ -51,7 +51,6 @@ export default async function handler(req, res) {
         const response = await ai.getGenerativeModel({ model }).generateContent({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             config: {
-                // 可选配置：设置温度控制创意性
                 temperature: 0.7, 
             },
         });
@@ -66,3 +65,6 @@ export default async function handler(req, res) {
         res.status(500).json({ error: `AI Processing Error: ${error.message}` });
     }
 }
+
+// 切换到 CommonJS 导出: 使用 module.exports 导出函数
+module.exports = handler;
